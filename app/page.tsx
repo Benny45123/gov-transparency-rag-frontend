@@ -11,7 +11,7 @@ import { GeometricGreeting } from '@/components/geometric-greeting';
 import { useTerminalQuery } from '@/hooks/use-terminal-query';
 
 export default function Home() {
-  const [apiUrl] = useState('http://127.0.0.1:8000');
+  const [apiUrl] = useState(process.env.NEXT_PUBLIC_API_URL||'http://127.0.0.1:8000');
   const [showGreeting, setShowGreeting] = useState(true);
   
   // State for Dual-Role Selection
