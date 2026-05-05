@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface GeometricGreetingProps {
   onInteraction?: () => void;
@@ -10,10 +10,10 @@ interface GeometricGreetingProps {
 export function GeometricGreeting({ onInteraction }: GeometricGreetingProps) {
   const [isVisible, setIsVisible] = useState(true);
 
-  const handleInteraction = () => {
+  const handleInteraction = useCallback(() => {
     setIsVisible(false);
     onInteraction?.();
-  };
+  }, [onInteraction]);
 
   useEffect(() => {
     const handleClick = () => handleInteraction();
@@ -26,7 +26,7 @@ export function GeometricGreeting({ onInteraction }: GeometricGreetingProps) {
       window.removeEventListener('click', handleClick);
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, []);
+  }, [handleInteraction]);
 
   if (!isVisible) return null;
 

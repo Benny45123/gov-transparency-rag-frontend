@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Header } from '@/components/header';
 import { QueryInput } from '@/components/query-input';
 import { StreamWindow } from '@/components/stream-window';
@@ -9,29 +9,49 @@ import { CitationsPane } from '@/components/citations-pane';
 import { HistorySidebar } from '@/components/history-sidebar';
 import { GeometricGreeting } from '@/components/geometric-greeting';
 import { useTerminalQuery } from '@/hooks/use-terminal-query';
+import { FileSearch, RadioTower } from 'lucide-react';
 
 export default function Home() {
-  const [apiUrl] = useState(process.env.NEXT_PUBLIC_API_URL||'http://127.0.0.1:8000');
+  const [apiUrl] = useState(process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000');
   const [showGreeting, setShowGreeting] = useState(true);
-  
-  // State for Dual-Role Selection
   const [searchMode, setSearchMode] = useState<'stream' | 'deep'>('stream');
 
-  const { isLoading, streamContent, sources, error, history, streamQuery, clearHistory } =
+  const { isLoading, streamContent, sources, error, history, streamQuery, fetchHistory, clearHistory } =
     useTerminalQuery(apiUrl);
 
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
   const handleQuerySubmit = async (query: string) => {
-    // Pass the searchMode to your hook to dictate which backend path to prioritize
     await streamQuery(query, searchMode === 'deep');
   };
 
   return (
-    <main className="min-h-screen bg-black relative overflow-hidden">
-      {/* CRT Scanline overlay */}
-      <div className="fixed inset-0 pointer-events-none z-40 opacity-[0.03]">
-        <div className="absolute inset-0 bg-repeat" style={{
-          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0, 0, 0, 1) 1px, rgba(0, 0, 0, 1) 2px)'
-        }} />
+    <main className="relative min-h-screen overflow-hidden bg-black">
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_12%,rgba(245,158,11,0.13),transparent_30%),radial-gradient(circle_at_78%_18%,rgba(6,182,212,0.12),transparent_28%),linear-gradient(180deg,#030303_0%,#080808_46%,#020202_100%)]" />
+        <motion.div
+          className="absolute left-[-10%] top-24 h-14 w-[120%] rotate-[-8deg] border-y border-amber-300/20 bg-amber-400/[0.035]"
+          animate={{ x: ['-2%', '2%', '-2%'] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute bottom-28 right-[-15%] h-px w-[70%] rotate-[-18deg] bg-cyan-300/25"
+          animate={{ opacity: [0.1, 0.55, 0.1] }}
+          transition={{ duration: 4, repeat: Infinity }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[length:48px_48px]" />
+      </div>
+
+      <div className="pointer-events-none fixed inset-0 z-40 opacity-[0.035]">
+        <div
+          className="absolute inset-0 bg-repeat"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255,255,255,0.75) 1px, rgba(255,255,255,0.75) 2px)',
+          }}
+        />
       </div>
 
       {showGreeting && (
@@ -40,45 +60,45 @@ export default function Home() {
 
       <Header />
 
-      <div className="flex h-[calc(100vh-80px)]">
+      <div className="relative z-10 flex min-h-[calc(100vh-89px)] flex-col lg:flex-row">
         <HistorySidebar
           history={history}
           onSelectQuery={(q) => streamQuery(q, searchMode === 'deep')}
           onClearHistory={clearHistory}
         />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-shrink-0 border-b border-cyan-500/20 p-6 space-y-6 bg-gradient-to-b from-black/80 to-black/40">
-            
-            {/* DUAL ROLE SELECTOR */}
-            <div className="flex items-center justify-between">
-              <div className="flex bg-gray-900/50 p-1 rounded-md border border-gray-800">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="flex-shrink-0 space-y-6 border-b border-cyan-400/15 bg-gradient-to-b from-black/80 to-black/35 p-4 sm:p-6">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex w-full max-w-md rounded-md border border-zinc-800 bg-zinc-950/75 p-1">
                 <button
                   onClick={() => setSearchMode('stream')}
-                  className={`px-4 py-1.5 font-terminal text-[10px] uppercase tracking-tighter transition-all rounded ${
+                  className={`inline-flex flex-1 items-center justify-center gap-2 rounded px-3 py-2 font-terminal text-[10px] uppercase tracking-[0.14em] transition-all ${
                     searchMode === 'stream' 
-                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50' 
-                    : 'text-gray-500 hover:text-gray-300'
+                    ? 'border border-cyan-400/50 bg-cyan-400/15 text-cyan-300' 
+                    : 'border border-transparent text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  ⚡ Stream_Response
+                  <RadioTower size={13} />
+                  Stream
                 </button>
                 <button
                   onClick={() => setSearchMode('deep')}
-                  className={`px-4 py-1.5 font-terminal text-[10px] uppercase tracking-tighter transition-all rounded ${
+                  className={`inline-flex flex-1 items-center justify-center gap-2 rounded px-3 py-2 font-terminal text-[10px] uppercase tracking-[0.14em] transition-all ${
                     searchMode === 'deep' 
-                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50' 
-                    : 'text-gray-500 hover:text-gray-300'
+                    ? 'border border-amber-400/50 bg-amber-400/15 text-amber-300' 
+                    : 'border border-transparent text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  🔍 Deep_Study
+                  <FileSearch size={13} />
+                  Deep Study
                 </button>
               </div>
 
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full animate-pulse ${searchMode === 'deep' ? 'bg-amber-500' : 'bg-green-500'}`} />
-                <span className="text-gray-500 font-terminal text-xs">
-                  MODE: {searchMode.toUpperCase()}
+                <div className={`h-2 w-2 animate-pulse rounded-full ${searchMode === 'deep' ? 'bg-amber-400' : 'bg-green-500'}`} />
+                <span className="font-terminal text-xs uppercase tracking-[0.16em] text-zinc-500">
+                  Mode: {searchMode === 'deep' ? 'answer + citations' : 'streaming answer'}
                 </span>
               </div>
             </div>
@@ -87,17 +107,16 @@ export default function Home() {
               onSubmit={handleQuerySubmit}
               isLoading={isLoading}
               isLoadingSources={isLoading && searchMode === 'deep'}
-              placeholder={searchMode === 'deep' ? "Deep analysis of case records..." : "Quick stream query..."}
+              placeholder={searchMode === 'deep' ? 'Ask for a cited analysis of Epstein court records...' : 'Ask a quick records question...'}
             />
           </div>
 
-          {/* DUAL PANE VIEW */}
-          <div className="flex-1 overflow-hidden flex gap-4 p-6">
-            <div className={`flex-1 transition-all duration-500 ${searchMode === 'deep' ? 'opacity-40 scale-[0.98]' : 'opacity-100 scale-100'}`}>
-              <StreamWindow isLoading={isLoading && searchMode === 'stream'} content={streamContent} />
+          <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-4 lg:grid-cols-2 lg:overflow-hidden sm:p-6">
+            <div className={`min-h-[420px] transition-all duration-500 lg:min-h-0 ${searchMode === 'deep' ? 'opacity-85' : 'opacity-100'}`}>
+              <StreamWindow isLoading={isLoading} content={streamContent} error={error} />
             </div>
 
-            <div className={`flex-1 transition-all duration-500 ${searchMode === 'stream' ? 'opacity-40 scale-[0.98]' : 'opacity-100 scale-100'}`}>
+            <div className={`min-h-[420px] transition-all duration-500 lg:min-h-0 ${searchMode === 'stream' ? 'opacity-70' : 'opacity-100'}`}>
               <CitationsPane sources={sources} isLoading={isLoading && searchMode === 'deep'} />
             </div>
           </div>
