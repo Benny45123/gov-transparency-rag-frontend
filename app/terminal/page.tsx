@@ -9,21 +9,77 @@ import { CitationsPane } from '@/components/citations-pane';
 import { HistorySidebar } from '@/components/history-sidebar';
 import { useTerminalQuery } from '@/hooks/use-terminal-query';
 import { FileSearch, RadioTower } from 'lucide-react';
+import { authHeaders, clearAuthToken, getApiBaseUrl, getAuthToken, startGoogleOAuth } from '@/lib/auth';
 
 export default function TerminalPage() {
-  const [apiUrl] = useState(process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000');
+  const [apiUrl] = useState(getApiBaseUrl());
   const [searchMode, setSearchMode] = useState<'stream' | 'deep'>('stream');
+  const [authReady, setAuthReady] = useState(false);
 
   const { isLoading, streamContent, sources, error, history, streamQuery, fetchHistory, clearHistory } =
     useTerminalQuery(apiUrl);
 
   useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+    let cancelled = false;
+
+    const verifySession = async () => {
+      if (!getAuthToken()) {
+        await startGoogleOAuth(apiUrl);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${apiUrl}/auth/me`, {
+          headers: authHeaders(),
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          clearAuthToken();
+          await startGoogleOAuth(apiUrl);
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Session check failed (${response.status})`);
+        }
+
+        if (!cancelled) {
+          setAuthReady(true);
+          fetchHistory();
+        }
+      } catch {
+        if (!cancelled) {
+          clearAuthToken();
+          await startGoogleOAuth(apiUrl);
+        }
+      }
+    };
+
+    verifySession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiUrl, fetchHistory]);
 
   const handleQuerySubmit = async (query: string) => {
     await streamQuery(query, searchMode === 'deep');
   };
+
+  if (!authReady) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-black px-6">
+        <div className="w-full max-w-md border border-cyan-400/20 bg-zinc-950 px-6 py-8 text-center">
+          <div className="font-terminal text-[10px] uppercase tracking-[0.28em] text-cyan-300">
+            Session Check
+          </div>
+          <p className="mt-4 font-terminal text-xs leading-6 text-zinc-500">
+            Verifying Google authorization...
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black">

@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { getApiBaseUrl, getAuthToken, startGoogleOAuth } from '@/lib/auth';
 
 const TOTAL_SLIDES = 5;
 
@@ -637,6 +637,15 @@ export default function LandingPage() {
     [locked],
   );
 
+  const handleLaunchTerminal = async () => {
+    if (getAuthToken()) {
+      window.location.assign('/terminal');
+      return;
+    }
+
+    await startGoogleOAuth(getApiBaseUrl());
+  };
+
   useEffect(() => {
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
@@ -771,7 +780,7 @@ export default function LandingPage() {
             <div className="absolute bottom-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-[#8a6610] to-transparent" />
             <h2 className="[font-family:Impact,Haettenschweiler,'Arial_Narrow_Bold',sans-serif] text-5xl uppercase leading-none tracking-[0.16em]">Enter The Archive</h2>
             <p className="mx-auto mt-4 max-w-md text-sm font-light leading-7 text-[#8a7e72]">Query 2,000+ declassified DOJ documents using natural language AI. Every answer is source-cited and linked to retrieved filings.</p>
-            <Link href="/terminal" className="mt-8 inline-flex bg-[#d4a017] px-10 py-3 [font-family:Impact,Haettenschweiler,'Arial_Narrow_Bold',sans-serif] text-xl uppercase tracking-[0.28em] text-[#060606] transition hover:bg-[#e8b825] hover:tracking-[0.34em]">Launch Terminal</Link>
+            <button type="button" onClick={handleLaunchTerminal} className="mt-8 inline-flex bg-[#d4a017] px-10 py-3 [font-family:Impact,Haettenschweiler,'Arial_Narrow_Bold',sans-serif] text-xl uppercase tracking-[0.28em] text-[#060606] transition hover:bg-[#e8b825] hover:tracking-[0.34em]">Launch Terminal</button>
             <p className="mt-5 font-terminal text-[7px] uppercase tracking-[0.22em] text-[#c0392b]/70">Public record · FOIA released · justice.gov/epstein · H.R. 4405</p>
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-5 font-terminal text-[8px] uppercase tracking-[0.2em] text-[#5a524a]">

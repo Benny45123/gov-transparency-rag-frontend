@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { authHeaders, clearAuthToken, startGoogleOAuth } from '@/lib/auth';
 
 export interface Source {
   source_file: string;
@@ -156,13 +157,24 @@ export function useTerminalQuery(baseUrl: string = 'http://127.0.0.1:8000') {
       let finalAnswer = '';
 
       try {
+        const headers = {
+          'Content-Type': 'application/json',
+          ...authHeaders(),
+        };
+
         const streamPromise = (async () => {
           const response = await fetch(`${baseUrl}/query/stream`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(requestBody),
           });
           
+          if (response.status === 401 || response.status === 403) {
+            clearAuthToken();
+            await startGoogleOAuth(baseUrl);
+            return;
+          }
+
           if (!response.ok) {
             const detail = await response.text();
             throw new Error(detail || `Stream path failed (${response.status})`);
@@ -210,10 +222,16 @@ export function useTerminalQuery(baseUrl: string = 'http://127.0.0.1:8000') {
         if (isDeep) {
           deepPromise = fetch(`${baseUrl}/query`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(requestBody),
           })
           .then(async (res) => {
+            if (res.status === 401 || res.status === 403) {
+              clearAuthToken();
+              await startGoogleOAuth(baseUrl);
+              return;
+            }
+
             if (!res.ok) {
               const detail = await res.text();
               throw new Error(detail || `Deep Study path failed (${res.status})`);
@@ -250,7 +268,15 @@ export function useTerminalQuery(baseUrl: string = 'http://127.0.0.1:8000') {
 
   const fetchHistory = useCallback(async (limit: number = 20) => {
     try {
-      const response = await fetch(`${baseUrl}/history?limit=${limit}`);
+      const response = await fetch(`${baseUrl}/history?limit=${limit}`, {
+        headers: authHeaders(),
+      });
+      if (response.status === 401 || response.status === 403) {
+        clearAuthToken();
+        await startGoogleOAuth(baseUrl);
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
         setHistory(extractHistory(data).slice(0, limit));
