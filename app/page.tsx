@@ -627,6 +627,26 @@ export default function LandingPage() {
   const [locked, setLocked] = useState(false);
   const touchStart = useRef(0);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const error = params.get('error');
+
+    if (code) {
+      const callbackUrl = new URL('/auth/callback', getApiBaseUrl());
+      callbackUrl.searchParams.set('code', code);
+      callbackUrl.searchParams.set('redirect_to', window.location.origin);
+      window.location.replace(callbackUrl.toString());
+      return;
+    }
+
+    if (error) {
+      const successUrl = new URL('/auth/success', window.location.origin);
+      params.forEach((value, key) => successUrl.searchParams.set(key, value));
+      window.location.replace(successUrl.toString());
+    }
+  }, []);
+
   const goTo = useCallback(
     (next: number) => {
       if (locked || next < 0 || next >= TOTAL_SLIDES) return;
